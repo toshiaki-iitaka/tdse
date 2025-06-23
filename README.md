@@ -8,7 +8,7 @@ This repository contains the following programs:
 equation by the explicit symetric multistep scheme
 
 reference： T.Iitaka, Phys. Rev. E49 (1994) 4684.
-http://prola.aps.org/abstract/PRE/v49/i5/p4684_1
+https://doi.org/10.1103/PhysRevE.49.4684
 
 (1-1) Stability Check
 
