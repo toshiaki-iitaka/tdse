@@ -3,6 +3,7 @@ numerical algorithm for Time-Dependent Schroedinger Equation
 
 This repository contains the following programs:
 
+The 'fortran' directory contains programs written in fortran.
 
 (1) Numerical Integration of the time-dependent Schroedinger
 equation by the explicit symetric multistep scheme
@@ -44,4 +45,7 @@ BOXN     FOR
 1D       FOR    
 
 
+
+The 'python_gemini' directory contains python programs translated from the fortran programs with the help of Gemini 2.5 flash.
+https://g.co/gemini/share/3b6a7390eb48
 
