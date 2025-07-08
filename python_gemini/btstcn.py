@@ -237,25 +237,6 @@ def tstcn_program():
                         return
                     p[n_idx] = (p[n_idx+1] - f_solver[n_idx]) / e_solver[n_idx]
 
-
-            #
-            # plot
-            #
-            plt.gca().clear()
-            plt.title('Crank-Nicolson')
-            plt.xlabel(r'Emax*t')
-            plt.ylabel(r'error')
-            plt.xscale('log')
-            plt.yscale('log')
-            plt.xlim([0.1,100])
-            plt.ylim([1e-20,1])
-            plt.plot(plot_y[1],plot_y[2], marker='o', linestyle='None')
-            plt.plot(plot_y[1],plot_y[4], marker='o', linestyle='None')
-            plt.plot(plot_y[1],plot_y[5], marker='None', linestyle='dashed')
-            plt.show()
-            plt.savefig("btstcn.png")
-
-
             #
             # plot
             #
