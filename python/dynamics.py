@@ -46,11 +46,7 @@ def H(p):
 # --- Time evolution with Euler method ----
 def MSD1(p,dt):
     global iu
-    q = np.empty_like(p)
-    q = p -iu * dt * H(p)
-    #q = p
-    #print(f'return q ={q}, p = {p}')
-    return q
+    return p -iu * dt * H(p)
 
 # --- Main Program: NROOM ---
 def nroom_program():
@@ -64,42 +60,19 @@ def nroom_program():
     dx = 1.0
     dx2 = dx * dx
     emax = 1.0 / dx2
-    # Ensure M is within a valid range for the cosine argument to avoid division by zero or large values
 
-    ## Get input from user
-    #print('M ALPHA')
-    #try:
-    #    m_input, alpha_input = map(float, input().split())
-    #    m = int(m_input)
-    #    alpha = float(alpha_input)
-    #except ValueError:
-    #    print("Invalid input. Please enter two numbers separated by a space (e.g., '1 0.1').")
-    #    return
-    #
-    #if m <= 0 or m > NMAX:
-    #    print(f"Warning: M ({m}) should be between 1 and NMAX ({NMAX}) for stable calculation of DT.")
-
-    # fix to M=1 and ALPHA=0.1
     m = 1
-    alpha = 0.05
+    alpha = 0.1
     
-    # Calculate DT (time step)
-    # Fortran: DT=ALPHA/(EMAX*COS(M*PI/(NMAX+1)))
-    #cos_term = np.cos(m * PI / (NMAX + 1))
-    #if cos_term == 0:
-    #    print("Error: Division by zero in DT calculation (COS term is zero). Adjust M or NMAX.")
-    #    return
     dt = alpha / emax
 
-    # Calculate MTIME (total time steps)
-    #mtime = (2 * PI / alpha) * 10
-    #mtime = min(int(mtime), 10000) # Ensure MTIME is an integer
-
     # --- Calculation of Hamiltonian ---
-    # HA and HB arrays
     ha = np.zeros(NMAX, dtype=np.float64)
     hb = np.zeros(NMAX - 1, dtype=np.float64)
+    for n in range(NMAX - 1):
+        hb[n] = -0.5 / dx2
 
+    # plot emvironment
     plt.gca().clear()
     plt.title('Dynamics MSD')
     plt.xlabel(r'n')
@@ -110,16 +83,13 @@ def nroom_program():
     plt.ylim([0,20/NMAX])
 
     # dgree of the method
-    #NDEG  = 1
     for NDEG in [1,2,4,6]:
-    #for NDEG in [2]:
         NDEGH = int(np.floor(NDEG/2))
         NDEG1 = NDEG+1
-        for n in range(NMAX - 1):
-            hb[n] = -0.5 / dx2
+
+        # --- Setting Initial Wave Function ---
         phi = np.zeros((NDEG1,NMAX), dtype=np.complex128)
         
-        # --- Setting Initial Wave Function ---
         x0 = 0.3 * dx * NMAX
         sg = 0.05 * dx * NMAX
         pa_momentum = 0.1 * 2 * PI / dx
@@ -128,46 +98,43 @@ def nroom_program():
             phi[np.mod(0,NDEG1),n_idx] = np.exp(-0.5 * (x - x0)**2 / sg**2) * np.exp(iu * pa_momentum * (x - x0))
         anorm = np.linalg.norm(phi[np.mod(0,NDEG1),:])
         phi[np.mod(0,NDEG1),:] = phi[np.mod(0,NDEG1),:] / anorm
-        print(f'NDEG={NDEG},NDEGH={NDEGH},itime={0},anorm={anorm}')
+
+        # -- prepare wave function for t<0
         for itime in range(1,NDEG+1):
             phi[np.mod(-itime,NDEG1),:] = MSD1( phi[np.mod(-itime+1,NDEG1),:] , -dt)
             anorm = np.linalg.norm(phi[np.mod(-itime,NDEG1),:])
             phi[np.mod(-itime,NDEG1),:] = phi[np.mod(-itime,NDEG1),:]
-            print(f'NDEG={NDEG},NDEGH={NDEGH},itime={-itime},anorm={anorm}')
+
         #ph0, em = eigen_subroutine(m, dx, NMAX)
-
-
             
         # --- Time Evolution Loop ---
-        # Open the output file
         try:
-            #with open('tst'+str(NDEG)+'.dat', 'w') as f_out:
-                for itime in range(MTIME):
-                    t = dt * itime
-                    anorm = np.linalg.norm(phi[np.mod(itime,NDEG1)])**2
-                    #ovr = np.vdot(phi[np.mod(itime,NDEG1)], ph0)  * np.exp(-iu * em * t)
-                    print(f'NDEG={NDEG},itime={itime},anorm={anorm}')
+            for itime in range(MTIME):
+                t = dt * itime
+                anorm = np.linalg.norm(phi[np.mod(itime,NDEG1)])**2
+                #ovr = np.vdot(phi[np.mod(itime,NDEG1)], ph0)  * np.exp(-iu * em * t)
+                
+                if(NDEG == 1):
+                    #epsilon_theory = abs(em*dt)**2 / 2.0 
+                    q = phi[np.mod(itime,NDEG1)] /2
+                elif(NDEG == 2):
+                    #epsilon_theory = abs(em*dt)**3 / 6.0 
+                    q = phi[np.mod(itime,NDEG1)]
+                elif(NDEG == 4):
+                    #epsilon_theory = abs(em*dt)**5 * 7.0 / 90.0
+                    q = 2 * (-1.0/3.0 * phi[np.mod(itime-(NDEGH-1),NDEG1)]
+                             + 2.0/3.0 * ( phi[np.mod(itime-(NDEGH-1)+1,NDEG1)] + phi[np.mod(itime-(NDEGH-1)-1,NDEG1)]) )
+                elif(NDEG == 6):
+                    #epsilon_theory = abs(em*dt)**7 * 41.0 / 840.0
+                    q = 3 * ( 13.0/10.0  *   phi[np.mod(itime-(NDEGH-1),NDEG1)]
+                              - 7.0/10.0  * ( phi[np.mod(itime-(NDEGH-1)+1,NDEG1)] + phi[np.mod(itime-(NDEGH-1)-1,NDEG1)]) 
+                              + 11.0/20.0 * ( phi[np.mod(itime-(NDEGH-1)+2,NDEG1)] + phi[np.mod(itime-(NDEGH-1)-2,NDEG1)])  )
+                else:
+                    print(f'wrong NDEG = {NDEG}')
+                    sys.exit()
+
+                phi[np.mod(itime+1,NDEG1)] = -2 * iu * dt * H(q) + phi[np.mod(itime-(NDEG-1),NDEG1)]
                     
-                    if(NDEG == 1):
-                        #epsilon_theory = abs(em*dt)**2 / 2.0 
-                        q = phi[np.mod(itime,NDEG1)] /2
-                    elif(NDEG == 2):
-                        #epsilon_theory = abs(em*dt)**3 / 6.0 
-                        q = phi[np.mod(itime,NDEG1)]
-                    elif(NDEG == 4):
-                        #epsilon_theory = abs(em*dt)**5 * 7.0 / 90.0
-                        q = 2 * (-1.0/3.0 * phi[np.mod(itime-(NDEGH-1),NDEG1)]
-                                 + 2.0/3.0 * ( phi[np.mod(itime-(NDEGH-1)+1,NDEG1)] + phi[np.mod(itime-(NDEGH-1)-1,NDEG1)]) )
-                    elif(NDEG == 6):
-                        #epsilon_theory = abs(em*dt)**7 * 41.0 / 840.0
-                        q = 3 * ( 13.0/10.0  *   phi[np.mod(itime-(NDEGH-1),NDEG1)]
-                                  - 7.0/10.0  * ( phi[np.mod(itime-(NDEGH-1)+1,NDEG1)] + phi[np.mod(itime-(NDEGH-1)-1,NDEG1)]) 
-                                  + 11.0/20.0 * ( phi[np.mod(itime-(NDEGH-1)+2,NDEG1)] + phi[np.mod(itime-(NDEGH-1)-2,NDEG1)])  )
-                    else:
-                        print(f'wrong NDEG = {NDEG}')
-                        sys.exit()
-                    #phi[np.mod(itime+1,NDEG1)] = -2 * iu * dt * H(q) + phi[np.mod(itime-(NDEGH+NDEGH-1),NDEG1)]
-                    phi[np.mod(itime+1,NDEG1)] = -2 * iu * dt * H(q) + phi[np.mod(itime-(NDEG-1),NDEG1)]           
         except Exception as e:
             print(f"An error occurred during file operations: {e}")
                     
@@ -182,7 +149,7 @@ def nroom_program():
     plt.show()
     plt.savefig("dynamics.png")
         
-    print("Program finished. Results written to error"+str(NDEG)+".dat")
+    print("Program finished.")
 
 # Call the main program function
 if __name__ == '__main__':

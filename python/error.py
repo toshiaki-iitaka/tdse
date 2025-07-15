@@ -54,27 +54,10 @@ def nroom_program():
     emax = 1.0 / dx2
     # Define complex imaginary unit
     iu = 0.0 + 1.0j
-    # Ensure M is within a valid range for the cosine argument to avoid division by zero or large values
 
-    ## Get input from user
-    #print('M ALPHA')
-    #try:
-    #    m_input, alpha_input = map(float, input().split())
-    #    m = int(m_input)
-    #    alpha = float(alpha_input)
-    #except ValueError:
-    #    print("Invalid input. Please enter two numbers separated by a space (e.g., '1 0.1').")
-    #    return
-    #
-    #if m <= 0 or m > NMAX:
-    #    print(f"Warning: M ({m}) should be between 1 and NMAX ({NMAX}) for stable calculation of DT.")
-
-    # fix to M=1 and ALPHA=0.1
     m = 1
     alpha = 0.1
-    
-    # Calculate DT (time step)
-    # Fortran: DT=ALPHA/(EMAX*COS(M*PI/(NMAX+1)))
+
     cos_term = np.cos(m * PI / (NMAX + 1))
     if cos_term == 0:
         print("Error: Division by zero in DT calculation (COS term is zero). Adjust M or NMAX.")
@@ -86,17 +69,15 @@ def nroom_program():
     mtime = min(int(mtime), 10000) # Ensure MTIME is an integer
 
     # --- Calculation of Hamiltonian ---
-    # HA and HB arrays
     ha = np.zeros(NMAX, dtype=np.float64)
     hb = np.zeros(NMAX - 1, dtype=np.float64)
+    for n in range(NMAX - 1):
+        hb[n] = -0.5 / dx2
 
     # dgree of the method
-    #NDEG  = 1
     for NDEG in [1,2,4,6]:
         NDEGH = int(np.floor(NDEG/2))
         NDEG1 = NDEG+1
-        for n in range(NMAX - 1):
-            hb[n] = -0.5 / dx2
 
         # --- Setting Initial Wave Function ---
         ph0, em = eigen_subroutine(m, dx, NMAX)
@@ -114,7 +95,6 @@ def nroom_program():
                     t = dt * itime
                     anorm = np.linalg.norm(phi[np.mod(itime,NDEG1)])**2
                     ovr = np.vdot(phi[np.mod(itime,NDEG1)], ph0)  * np.exp(-iu * em * t)
-                    
                     
                     if(NDEG == 1):
                         epsilon_theory = abs(em*dt)**2 / 2.0 
@@ -134,7 +114,7 @@ def nroom_program():
                     else:
                         print(f'wrong NDEG = {NDEG}')
                         sys.exit()
-                    #phi[np.mod(itime+1,NDEG1)] = -2 * iu * dt * H(q) + phi[np.mod(itime-(NDEGH+NDEGH-1),NDEG1)]
+
                     phi[np.mod(itime+1,NDEG1)] = -2 * iu * dt * H(q) + phi[np.mod(itime-(NDEG-1),NDEG1)]
                     
                     
