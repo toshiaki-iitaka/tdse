@@ -3,7 +3,7 @@ numerical algorithm for Time-Dependent Schroedinger Equation
 
 This repository contains the following programs:
 
-## fortran ## directory contains programs written in fortran.
+## fortran directory contains programs written in fortran.
 
 (1) Numerical Integration of the time-dependent Schroedinger
 equation by the explicit symetric multistep scheme
